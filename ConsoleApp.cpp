@@ -1,25 +1,12 @@
 #include <iostream>
+#include <string>
 
 using namespace std;
 
-class Point {
-public:
-    int x;
-    int y;
-
-    Point() {
-        x = 0;
-        y = 0;
-    }
-
-    Point(int a, int b) {
-        x = a;
-        y = b;
-    }
-
-    void print() {
-        cout << "(" << x << ", " << y << ")";
-    }
+struct Vagon {
+    int number;
+    int capacity;
+    int passengers;
 };
 
 template <typename T>
@@ -27,10 +14,12 @@ class Node {
 public:
     T data;
     Node* next;
+    Node* prev;
 
     Node(T d) {
         data = d;
         next = nullptr;
+        prev = nullptr;
     }
 };
 
@@ -38,92 +27,230 @@ template <typename T>
 class List {
 public:
     Node<T>* head;
+    Node<T>* tail;
+    int size;
 
     List() {
         head = nullptr;
-    }
-
-    void push_front(T val) {
-        Node<T>* newNode = new Node<T>(val);
-        newNode->next = head;
-        head = newNode;
-    }
-
-    void push_back(T val) {
-        Node<T>* newNode = new Node<T>(val);
-        if (head == nullptr) {
-            head = newNode;
-            return;
-        }
-        Node<T>* temp = head;
-        while (temp->next != nullptr) {
-            temp = temp->next;
-        }
-        temp->next = newNode;
-    }
-
-    void pop_front() {
-        if (head != nullptr) {
-            Node<T>* temp = head;
-            head = head->next;
-            delete temp;
-        }
-    }
-};
-
-class Vector {
-public:
-    int size;
-    List<Point> points;
-
-    Vector() {
+        tail = nullptr;
         size = 0;
     }
 
-    void addFront(Point p) {
-        points.push_front(p);
-        size++;
-    }
-
-    void addBack(Point p) {
-        points.push_back(p);
-        size++;
-    }
-
-    void removeFront() {
-        if (size > 0) {
-            points.pop_front();
-            size--;
-        }
-    }
-
-    void Print() {
-        Node<Point>* temp = points.head;
+    List(const List& other) {
+        head = nullptr;
+        tail = nullptr;
+        size = 0;
+        Node<T>* temp = other.head;
         while (temp != nullptr) {
-            temp->data.print();
-            cout << " ";
+            PushBack(temp->data);
             temp = temp->next;
         }
-        cout << endl;
+    }
+
+    List& operator=(const List& other) {
+        if (this == &other) return *this;
+        while (head != nullptr) {
+            DeleteFromHead();
+        }
+        Node<T>* temp = other.head;
+        while (temp != nullptr) {
+            PushBack(temp->data);
+            temp = temp->next;
+        }
+        return *this;
+    }
+
+    ~List() {
+        while (head != nullptr) {
+            DeleteFromHead();
+        }
+    }
+
+    void PushFront(T val) {
+        Node<T>* newNode = new Node<T>(val);
+        if (head == nullptr) {
+            head = tail = newNode;
+        } else {
+            newNode->next = head;
+            head->prev = newNode;
+            head = newNode;
+        }
+        size++;
+    }
+
+    void PushBack(T val) {
+        Node<T>* newNode = new Node<T>(val);
+        if (head == nullptr) {
+            head = tail = newNode;
+        } else {
+            tail->next = newNode;
+            newNode->prev = tail;
+            tail = newNode;
+        }
+        size++;
+    }
+
+    void DeleteFromHead() {
+        if (head == nullptr) return;
+        Node<T>* temp = head;
+        if (head == tail) {
+            head = tail = nullptr;
+        } else {
+            head = head->next;
+            head->prev = nullptr;
+        }
+        delete temp;
+        size--;
+    }
+
+    void DeleteFromTail() {
+        if (tail == nullptr) return;
+        Node<T>* temp = tail;
+        if (head == tail) {
+            head = tail = nullptr;
+        } else {
+            tail = tail->prev;
+            tail->next = nullptr;
+        }
+        delete temp;
+        size--;
+    }
+
+    void InsertAt(int pos, T val) {
+        if (pos <= 0) {
+            PushFront(val);
+            return;
+        }
+        if (pos >= size) {
+            PushBack(val);
+            return;
+        }
+        Node<T>* temp = head;
+        for (int i = 0; i < pos; i++) {
+            temp = temp->next;
+        }
+        Node<T>* newNode = new Node<T>(val);
+        newNode->next = temp;
+        newNode->prev = temp->prev;
+        temp->prev->next = newNode;
+        temp->prev = newNode;
+        size++;
+    }
+
+    void DeleteAt(int pos) {
+        if (pos < 0 || pos >= size || head == nullptr) return;
+        if (pos == 0) {
+            DeleteFromHead();
+            return;
+        }
+        if (pos == size - 1) {
+            DeleteFromTail();
+            return;
+        }
+        Node<T>* temp = head;
+        for (int i = 0; i < pos; i++) {
+            temp = temp->next;
+        }
+        temp->prev->next = temp->next;
+        temp->next->prev = temp->prev;
+        delete temp;
+        size--;
+    }
+};
+
+class Train {
+private:
+    string model;
+    int countVagons;
+    List<Vagon> vagons;
+
+public:
+    Train() {
+        model = "Default Train";
+        countVagons = 0;
+    }
+
+    Train(string m) {
+        model = m;
+        countVagons = 0;
+    }
+
+    Train(const Train& other) {
+        model = other.model;
+        countVagons = other.countVagons;
+        vagons = other.vagons; 
+    }
+
+    void AddFront(Vagon v) {
+        vagons.PushFront(v);
+        countVagons++;
+    }
+
+    void AddBack(Vagon v) {
+        vagons.PushBack(v);
+        countVagons++;
+    }
+
+    void RemoveFront() {
+        if (countVagons > 0) {
+            vagons.DeleteFromHead();
+            countVagons--;
+        }
+    }
+
+    void RemoveBack() {
+        if (countVagons > 0) {
+            vagons.DeleteFromTail();
+            countVagons--;
+        }
+    }
+
+    void InsertVagon(int pos, Vagon v) {
+        vagons.InsertAt(pos, v);
+        countVagons++;
+    }
+
+    void DeleteVagon(int pos) {
+        if (countVagons > 0 && pos >= 0 && pos < countVagons) {
+            vagons.DeleteAt(pos);
+            countVagons--;
+        }
+    }
+
+    void Show() {
+        cout << "Модель потяга: " << model << " | Кількість вагонів: " << countVagons << "\n";
+        Node<Vagon>* temp = vagons.head;
+        while (temp != nullptr) {
+            cout << "[Вагон " << temp->data.number 
+                 << " | Місць: " << temp->data.capacity 
+                 << " | Пасажирів: " << temp->data.passengers << "] -> ";
+            temp = temp->next;
+        }
+        cout << "Кінець\n\n";
     }
 };
 
 int main() {
-    Vector v;
-    
-    Point p1(1, 1);
-    Point p2(2, 2);
-    Point p3(3, 3);
+    Train myTrain("Тарпан");
 
-    v.addBack(p1);
-    v.addBack(p2);
-    v.addFront(p3);
+    Vagon v1 = {1, 40, 35};
+    Vagon v2 = {2, 40, 40};
+    Vagon v3 = {3, 40, 15};
+    Vagon v4 = {4, 40, 10};
 
-    v.Print();
+    myTrain.AddBack(v1);
+    myTrain.AddBack(v2);
+    myTrain.AddFront(v3);
+    myTrain.Show();
 
-    v.removeFront();
-    
-    v.Print();
+    myTrain.InsertVagon(1, v4); 
+    myTrain.Show();
+
+    myTrain.DeleteVagon(2); 
+    myTrain.Show();
+
+    Train copiedTrain = myTrain;
+    copiedTrain.Show();
 
     return 0;
 }
